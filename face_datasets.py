@@ -21,7 +21,7 @@ for root, dirs, files in os.walk(directory):
     ID += len(dirs)
 
 print(ID)
-ID = 6
+ID = 3
 path = directory + '/' + str(ID)
 if not os.path.exists(path):
     os.makedirs(path)
