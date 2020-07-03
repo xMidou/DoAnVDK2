@@ -1,7 +1,7 @@
 # USAGE
 # python extract_embeddings.py --dataset dataset --embeddings output/embeddings.pickle --detector face_detection_model --embedding-model openface_nn4.small2.v1.t7
 
-# import the necessary packages
+# import  the necessary packages
 from imutils import paths
 import numpy as np
 import argparse
@@ -12,13 +12,13 @@ import os
 
 # construct the argument parser and parse the arguments
 ap = argparse.ArgumentParser()
-ap.add_argument("-i", "--dataset", required=True,
+ap.add_argument("-i", "--dataset", default='dataset',
 	help="D:/opencv-face-recognition/dataset")
-ap.add_argument("-e", "--embeddings", required=True,
+ap.add_argument("-e", "--embeddings", default='output/embeddings.pickle',
 	help="D:/opencv-face-recognition/output/embeddings.pickle")
-ap.add_argument("-d", "--detector", required=True,
+ap.add_argument("-d", "--detector", default='face_detection_model',
 	help="D:/opencv-face-recognition/face_detection_model")
-ap.add_argument("-m", "--embedding-model", required=True,
+ap.add_argument("-m", "--embedding-model", default='openface_nn4.small2.v1.t7',
 	help="D:/opencv-face-recognition/openface_nn4.small2.v1.t7")
 ap.add_argument("-c", "--confidence", type=float, default=0.6,
 	help="70")

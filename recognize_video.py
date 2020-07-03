@@ -1,31 +1,58 @@
 # USAGE
 # python recognize_video.py --detector face_detection_model --embedding-model openface_nn4.small2.v1.t7 --recognizer output/recognizer.pickle --le output/le.pickle
 
+
 # import the necessary packages
+import pyrebase
 from imutils.video import VideoStream
 from imutils.video import FPS
 import numpy as np
 import argparse
 import imutils
 import pickle
-import time
 import cv2
 import os
+import time 
+import json 
+import datetime
+import fireBase
+firebaseConfig = {
+    "apiKey": "AIzaSyBAh2EGtDNhuOP9LF5jw0ViBPmWH71OaMo",
+    "authDomain": "raspberry-face-recognition.firebaseapp.com",
+    "databaseURL": "https://raspberry-face-recognition.firebaseio.com",
+    "projectId": "raspberry-face-recognition",
+    "storageBucket": "raspberry-face-recognition.appspot.com",
+    "messagingSenderId": "469377065466",
+    "appId": "1:469377065466:web:cfe2c3c3933e76c1958443",
+    "measurementId": "G-WQVN4Q38MH"
+}
 
+firebase = pyrebase.initialize_app(firebaseConfig)
+fireb_auth = firebase.auth()
+db = firebase.database()
+
+
+storage = firebase.storage()
+path_on_cloud = "checkin/foo.jpg"
+path_local = "images/frame.jpg"
 # construct the argument parser and parse the arguments
 ap = argparse.ArgumentParser()
-ap.add_argument("-d", "--detector", required=True,
+ap.add_argument("-d", "--detector", default= 'face_detection_model',
 	help="path to OpenCV's deep learning face detector")
-ap.add_argument("-m", "--embedding-model", required=True,
+ap.add_argument("-m", "--embedding-model", default= 'openface_nn4.small2.v1.t7',
 	help="path to OpenCV's deep learning face embedding model")
-ap.add_argument("-r", "--recognizer", required=True,
+ap.add_argument("-r", "--recognizer", default= 'output/recognizer.pickle',
 	help="path to model trained to recognize faces")
-ap.add_argument("-l", "--le", required=True,
+ap.add_argument("-l", "--le", default= 'output/le.pickle',
 	help="path to label encoder")
-ap.add_argument("-c", "--confidence", type=float, default=0.5,
+ap.add_argument("-c", "--confidence", type=float, default=0.7,
 	help="minimum probability to filter weak detections")
 args = vars(ap.parse_args())
 
+
+def converttime(o):
+  if isinstance(o, datetime.datetime):
+        return o.__str__()
 # load our serialized face detector from disk
 print("[INFO] loading face detector...")
 protoPath = os.path.sep.join([args["detector"], "deploy.prototxt"])
@@ -50,14 +77,19 @@ time.sleep(2.0)
 fps = FPS().start()
 
 # loop over frames from the video file stream
+count  =0 
+check =0
+face_check = {}
 while True:
+	state = True
 	# grab the frame from the threaded video stream
 	frame = vs.read()
-
+	count+=1
 	# resize the frame to have a width of 600 pixels (while
 	# maintaining the aspect ratio), and then grab the image
 	# dimensions
 	frame = imutils.resize(frame, width=600)
+	cv2.imwrite("images/frame.jpg", frame)     # save frame as JPEG file
 	(h, w) = frame.shape[:2]
 
 	# construct a blob from the image
@@ -65,6 +97,7 @@ while True:
 		cv2.resize(frame, (300, 300)), 1.0, (300, 300),
 		(104.0, 177.0, 123.0), swapRB=False, crop=False)
 
+	
 	# apply OpenCV's deep learning-based face detector to localize
 	# faces in the input image
 	detector.setInput(imageBlob)
@@ -90,7 +123,7 @@ while True:
 			# ensure the face width and height are sufficiently large
 			if fW < 20 or fH < 20:
 				continue
-
+			
 			# construct a blob for the face ROI, then pass the blob
 			# through our face embedding model to obtain the 128-d
 			# quantification of the face
@@ -104,23 +137,48 @@ while True:
 			j = np.argmax(preds)
 			proba = preds[j]
 			name = le.classes_[j]
-			if proba < 0.4 :
-                                name = 'unknown'
+			if proba < 0.5 :
+				name = 'unknown'
 
-			# draw the bounding box of the face along with the
-			# associated probability
 			text = "{}: {:.2f}%".format(name, proba * 100)
 			y = startY - 10 if startY - 10 > 10 else startY + 10
-			cv2.rectangle(frame, (startX, startY), (endX, endY),
-				(0, 0, 255), 2)
-			cv2.putText(frame, text, (startX, y),
-				cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 0, 255), 2)
+			cv2.rectangle(frame, (startX, startY), (endX, endY), (0, 0, 255), 2)
+			cv2.putText(frame, text, (startX, y), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 0, 255), 2)
+			face_check[name] = face_check.get(name, 0) + 1
+			#time.sleep(0.1)
+			# draw the bounding box of the face along with the
+			# associated probability
+			
 
 	# update the FPS counter
 	fps.update()
-
+	#time.sleep(1)
 	# show the output frame
 	cv2.imshow("Frame", frame)
+	print(face_check)
+	if count == 10:
+		check = 0
+		for key in face_check:
+			if(face_check[key] > 8):
+				fireBase.updateData(key)
+				print(key)
+				break
+			else:
+				check += 1
+                
+			if check == len(face_check):
+				print('Vui long thu lai')
+		face_check.clear()
+		count = 0
+		time.sleep(1)
+        
+				
+            
+            
+                
+                
+            
+        
 	key = cv2.waitKey(1) & 0xFF
 
 	# if the `q` key was pressed, break from the loop

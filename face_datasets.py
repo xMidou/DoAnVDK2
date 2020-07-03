@@ -12,25 +12,25 @@ face_detector = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 face_id = 0
 
 # Initialize sample face image -> bắt đầu lẫy mẫu ảnh khuôn mặt
-count = 0;
+count = 0
 
 # Count ID
 directory = 'dataset'
-ID = 0
-for root, dirs, files in os.walk(directory):
-    ID += len(dirs)
+#ID = 0
+#for root, dirs, files in os.walk(directory):
+#    ID += len(dirs)
 
-print(ID)
-ID = 3
-path = directory + '/' + str(ID)
-if not os.path.exists(path):
-    os.makedirs(path)
-imagePaths = [os.path.join(path,f) for f in os.listdir(path)]
+#print(ID)
+#ID = Huy
+path = directory + '/Trinh'
+#if not os.path.exists(path):
+#    os.makedirs(path)
+#imagePaths = [os.path.join(path,f) for f in os.listdir(path)]
 count = 0
 for root, dirs, files in os.walk(path):
     count = len(files)
 
-limit = count + 300
+limit = count + 100
 # Start looping
 while(True):
 
